@@ -1,0 +1,166 @@
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "MainGui"
+screenGui.ResetOnSpawn = false
+
+-- Create Frame
+local frame = Instance.new("Frame")
+frame.Name = "MainFrame"
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.BorderSizePixel = 0
+frame.Position = UDim2.new(0.1, 0, 0.1, 0)
+frame.Size = UDim2.new(0.3, 0, 0.6, 0)
+frame.ClipsDescendants = true
+frame.Parent = screenGui
+
+-- Create UIStroke for rainbow outline
+local uiStroke = Instance.new("UIStroke")
+uiStroke.Thickness = 2
+uiStroke.Parent = frame
+
+-- Rainbow outline function
+local function updateRainbow()
+    local hue = tick() % 10 / 10
+    uiStroke.Color = Color3.fromHSV(hue, 1, 1)
+end
+
+game:GetService("RunService").RenderStepped:Connect(updateRainbow)
+
+-- Make the frame draggable
+local dragging, dragInput, dragStart, startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if dragging and input == dragInput then
+        update(input)
+    end
+end)
+
+-- Create ScrollingFrame for options
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Size = UDim2.new(1, 0, 1, 0)
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 1, 0)
+scrollingFrame.ScrollBarThickness = 6
+scrollingFrame.Parent = frame
+
+-- Create Main Settings and Other Settings labels
+local mainSettingLabel = Instance.new("TextLabel")
+mainSettingLabel.Text = "Main Setting"
+mainSettingLabel.Size = UDim2.new(1, 0, 0, 50)
+mainSettingLabel.BackgroundTransparency = 1
+mainSettingLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+mainSettingLabel.Parent = scrollingFrame
+
+local othersSettingLabel = Instance.new("TextLabel")
+othersSettingLabel.Text = "Others Setting"
+othersSettingLabel.Size = UDim2.new(1, 0, 0, 50)
+othersSettingLabel.Position = UDim2.new(0, 0, 1, 0)
+othersSettingLabel.BackgroundTransparency = 1
+othersSettingLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+othersSettingLabel.Parent = scrollingFrame
+
+-- Create buttons
+local function createButton(name, text, position)
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Text = text
+    button.Size = UDim2.new(0.8, 0, 0, 40)
+    button.Position = position
+    button.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    button.TextColor3 = Color3.fromRGB(0, 0, 0)
+    button.Parent = scrollingFrame
+    return button
+end
+
+local godModeButton = createButton("GodModeButton", "God Mode", UDim2.new(0.1, 0, 0, 60))
+local speedButton = createButton("SpeedButton", "Speed", UDim2.new(0.1, 0, 0, 120))
+local infJumpButton = createButton("InfJumpButton", "Infinite Jump", UDim2.new(0.1, 0, 0, 180))
+
+-- Close button
+local closeButton = Instance.new("TextButton")
+closeButton.Text = "X"
+closeButton.Size = UDim2.new(0, 40, 0, 40)
+closeButton.Position = UDim2.new(1, -50, 0, 10)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.Parent = frame
+
+closeButton.MouseButton1Click:Connect(function()
+    screenGui.Enabled = false
+end)
+
+-- God Mode functionality
+local godModeActive = false
+
+godModeButton.MouseButton1Click:Connect(function()
+    godModeActive = not godModeActive
+    local message = godModeActive and "God Mode ON" or "God Mode OFF"
+    game.Players.LocalPlayer.Character.Humanoid.MaxHealth = godModeActive and math.huge or 100
+    game.Players.LocalPlayer.Character.Humanoid.Health = game.Players.LocalPlayer.Character.Humanoid.MaxHealth
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "God Mode";
+        Text = message;
+    })
+end)
+
+-- Speed functionality
+local speedMultiplier = 1
+local maxSpeedMultiplier = 5
+
+speedButton.MouseButton1Click:Connect(function()
+    speedMultiplier = speedMultiplier + 1
+    if speedMultiplier > maxSpeedMultiplier then
+        speedMultiplier = 1
+    end
+    local newSpeed = 16 * speedMultiplier
+    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = newSpeed
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "Speed";
+        Text = "Speed Multiplier: " .. speedMultiplier;
+    })
+end)
+
+-- Infinite Jump functionality
+local infJumpActive = false
+
+infJumpButton.MouseButton1Click:Connect(function()
+    infJumpActive = not infJumpActive
+    local message = infJumpActive and "Infinite Jump ON" or "Infinite Jump OFF"
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "Infinite Jump";
+        Text = message;
+    })
+end)
+
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if infJumpActive then
+        game.Players.LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+-- Parent GUI to player's PlayerGui
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
